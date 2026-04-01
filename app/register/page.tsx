@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient"; // Ensure this path matches your project
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GlassCard } from "@/components/ui/card";
@@ -10,13 +12,41 @@ import { motion } from "framer-motion";
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
-      window.location.href = "/dashboard";
-    }, 1000);
+
+    try {
+      // 1. Sign up the user in Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
+      });
+
+      if (error) {
+        alert("Error: " + error.message);
+        setIsLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        alert("Registration Successful! Redirecting...");
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -49,47 +79,35 @@ export default function RegisterPage() {
             <div className="space-y-4">
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/40" />
-                <Input type="text" placeholder="Full Name" className="pl-12" required />
+                <Input 
+                  type="text" 
+                  placeholder="Full Name" 
+                  className="pl-12" 
+                  required 
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
               </div>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/40" />
-                <Input type="email" placeholder="Email address" className="pl-12" required />
+                <Input 
+                  type="email" 
+                  placeholder="Email address" 
+                  className="pl-12" 
+                  required 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/40" />
-                <Input type="password" placeholder="Create Password" className="pl-12" required />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-foreground">Charity Partner</label>
-                <select name="charityPartner" className="border p-2 rounded w-full mb-4" required>
-                  <option value="junior-golf">Junior Golf Foundation</option>
-                  <option value="clean-water">Clean Water Initiative</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-foreground">Choose Plan</label>
-                <div className="flex gap-4 mb-4">
-                  <label className="flex items-center gap-2">
-                    <input type="radio" name="plan" value="monthly" required />
-                    <span>Monthly (£19/mo)</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input type="radio" name="plan" value="yearly" required />
-                    <span>Yearly (£190/yr - Save 20%)</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-foreground">Contribution Percentage (Min 10%)</label>
-                <input
-                  type="number"
-                  min="10"
-                  defaultValue="10"
-                  className="border p-2 rounded w-full mb-4"
-                  required
+                <Input 
+                  type="password" 
+                  placeholder="Create Password" 
+                  className="pl-12" 
+                  required 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
             </div>
